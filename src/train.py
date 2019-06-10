@@ -79,7 +79,7 @@ def train(options):
     
     model = Answer_Generator(options)
     
-    tf_loss, tf_aucc, tf_image, tf_question, tf_label = model.build_model()
+    tf_loss, tf_aucc = model.build_model()
 
     gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5, allow_growth=True)
     sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
@@ -128,7 +128,8 @@ def train(options):
                         [tf.loss, tf_aucc],
                         feed_dict={
                             tf_image: batch_image_feat,
-                            tf_question: input_idx,
+                            input_idx: input_idx,
+                            input_mask: input_mask,
                             tf_label: batch_answer_label.astype('int32').flatten()
                             })
                 val_count += batch_image_feat.shape[0]
@@ -160,11 +161,12 @@ def train(options):
         # do the training process!!!
         _, loss ,aucc = sess.run(
                 [train_op, tf_loss, tf_aucc],
-                feed_dict={
-                    tf_image: batch_image_feat,
-                    tf_question: input_idx,
-                    tf_label: batch_answer_label.astype('int32').flatten()
-                    })
+                        feed_dict={
+                            tf_image: batch_image_feat,
+                            input_idx: input_idx,
+                            input_mask: input_mask,
+                            tf_label: batch_answer_label.astype('int32').flatten()
+                            })
 
         current_learning_rate = lr*decay_factor
         lr.assign(current_learning_rate).eval(session=sess)
